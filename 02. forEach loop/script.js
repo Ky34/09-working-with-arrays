@@ -6,7 +6,7 @@ const currencies = new Map([
   ['CNY', 'Chinese yuan'],
 ]);
 
-const transactions = [300, 250, -500, 5000, -750, -180, 50, 1400, -350, -120];
+const transactions = [300, 250, -500, 5000, -750, -180, 500, 400, -350, -120];
 
 // forEach()
 

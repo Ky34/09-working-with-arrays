@@ -65,7 +65,7 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
-// ДЕЛАЕМ СПИСОК ТРАНЗАКЦИЙ
+// ФУНКЦИЯ ДЕЛАЕТ СПИСОК ТРАНЗАКЦИЙ
 const displayTransactions = function (transactions) {
   containerTransactions.innerHTML = ''; // с помощью этого свойства очищается контейнер
 
@@ -84,8 +84,6 @@ const displayTransactions = function (transactions) {
     containerTransactions.insertAdjacentHTML('afterbegin', transactionRow); // указываем 2 параметра, 1 как мы хотим вставить элемент, 2-ой какой элемент вставлять
   });
 };
-
-displayTransactions(account1.transactions);
 
 // console.log(containerTransactions.innerHTML);
 
@@ -135,9 +133,64 @@ console.log(accounts);
 // console.log(newAccounts);
 /////////////////////////////////////////////////////////////////////////
 
-// ОТОБРАЖЕНИЕ БАЛАНСА
+// ФУНКЦИЯ ОТОБРАЖЕНИЕ БАЛАНСА
 const displayBalance = function (trasactions) {
   const balance = trasactions.reduce((acc, trans) => acc + trans, 0);
   labelBalance.textContent = `${balance}$`;
 };
-displayBalance(account1.transactions);
+
+// ФУНКЦИЯ ДЛЯ ОТОБРАЖЕНИЯ СУММЫ ВСЕХ ПОЛУЧЕНИЙ, ВЫВОДОВ СРЕДСТВ И ПРОЦЕНТ
+
+const displayTotal = function (account) {
+  const depositTotal = account.transactions
+    .filter(trans => trans > 0)
+    .reduce((acc, trans) => acc + trans, 0);
+  labelSumIn.textContent = `${depositTotal}$`;
+
+  const withdrawalTotal = account.transactions
+    .filter(trans => trans < 0)
+    .reduce((acc, trans) => acc + trans, 0);
+  labelSumOut.textContent = `${withdrawalTotal}$`;
+
+  const interestTotal = account.transactions
+    .filter(trans => trans > 0)
+    .map(depos => (depos * account.interest) / 100)
+    .reduce((acc, interest) => acc + interest, 0);
+  labelSumInterest.textContent = `${interestTotal.toFixed(2)}$`;
+};
+
+// ИМПЛЕМЕНТИРУЕМ ЛОГИН
+
+let currentAccount; // обьявляем переменную текущего аккаунта
+
+// в формах обработчик события срабатывает при нажатии клавиши enter
+btnLogin.addEventListener('click', function (e) {
+  e.preventDefault(); // метод предотвращает отправку формы, и страница не будет перезагружаться
+  // находим аккаунт пользователя
+  currentAccount = accounts.find(
+    account => account.nickname === inputLoginUsername.value // ищем по никнейму
+  );
+  console.log(currentAccount);
+  // обращаемся к свойству pin только если аккаун существует
+  if (currentAccount?.pin === Number(inputLoginPin.value)) {
+    // Display UI and welcome message
+    containerApp.style.opacity = 100; // показываем UI
+    labelWelcome.textContent = `Рады что вы снова с нами, ${
+      currentAccount.userName.split(' ')[0]
+    }!`;
+
+    // Clear inputs
+    inputLoginUsername.value = '';
+    inputLoginPin.value = '';
+    inputLoginPin.blur(); // убираем фокус курсора из поля pin
+
+    // Display transactions
+    displayTransactions(currentAccount.transactions);
+
+    // Display balance
+    displayBalance(currentAccount.transactions);
+
+    // Display total
+    displayTotal(currentAccount);
+  }
+});

@@ -65,26 +65,6 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
-// ФУНКЦИЯ ДЕЛАЕТ СПИСОК ТРАНЗАКЦИЙ
-const displayTransactions = function (transactions) {
-  containerTransactions.innerHTML = ''; // с помощью этого свойства очищается контейнер
-
-  transactions.forEach(function (trans, index) {
-    // Обьявляем переменную тип транзакции депозит или вывод средств
-    const transType = trans > 0 ? 'deposit' : 'withdrawal';
-
-    const transactionRow = `
-    <div class="transactions__row">
-      <div class="transactions__type transactions__type--${transType}">
-        ${index + 1} ${transType}
-      </div>
-      <div class="transactions__value">${trans} $</div>
-    </div>`;
-    // вставляем наш transactionRow после начала родительского элемента containerTransactions
-    containerTransactions.insertAdjacentHTML('afterbegin', transactionRow); // указываем 2 параметра, 1 как мы хотим вставить элемент, 2-ой какой элемент вставлять
-  });
-};
-
 // console.log(containerTransactions.innerHTML);
 
 // ГЕНЕРИРУЕМ НИКНЕЙМЫ
@@ -95,7 +75,7 @@ const nickname = userName
   .map(word => word[0]) // берем каждый эелемент и возвращаем 1ую букву
   .join(''); // соеденяем в одну строку, получаем 'oa'
 
-console.log(nickname);
+// console.log(nickname);
 
 // BAD PRACTICE
 // используем метод forEach так как хотим модифицировать исходный массив, а не создавать новый. C помощью этой функции добавляем в каждый объект новое свойство nikname со значением первая буква имени и фамилии в нижнем регистре
@@ -110,7 +90,7 @@ const createNicknames = function (accs) {
 };
 
 createNicknames(accounts);
-console.log(accounts);
+// console.log(accounts);
 
 //////////////////////////////////////////////////////////////////////////
 // Если нам не нужно изменять исходный массив, используем map()
@@ -133,14 +113,40 @@ console.log(accounts);
 // console.log(newAccounts);
 /////////////////////////////////////////////////////////////////////////
 
+// |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+//  -------------------------------ФУНКЦИИ--------------------------------------
+
+// ФУНКЦИЯ ДЕЛАЕТ СПИСОК ТРАНЗАКЦИЙ
+const displayTransactions = function (transactions, sort = false) {
+  containerTransactions.innerHTML = ''; // с помощью этого свойства очищается контейнер
+  // создаем переменную и если сортировка нужна, помещаем в нее копию массива отсортированную по возрастанию, если не нужна помещаем в нее исходный массив
+  const transacs = sort
+    ? transactions.slice().sort((x, y) => x - y)
+    : transactions;
+
+  transacs.forEach(function (trans, index) {
+    // Обьявляем переменную тип транзакции депозит или вывод средств
+    const transType = trans > 0 ? 'deposit' : 'withdrawal';
+    const transactionRow = `
+    <div class="transactions__row">
+      <div class="transactions__type transactions__type--${transType}">
+        ${index + 1} ${transType}
+      </div>
+      <div class="transactions__value">${trans} $</div>
+    </div>`;
+    // вставляем наш transactionRow после начала родительского элемента containerTransactions
+    containerTransactions.insertAdjacentHTML('afterbegin', transactionRow); // указываем 2 параметра, 1 как мы хотим вставить элемент, 2-ой какой элемент вставлять
+  });
+};
+
 // ФУНКЦИЯ ОТОБРАЖЕНИЕ БАЛАНСА
-const displayBalance = function (trasactions) {
-  const balance = trasactions.reduce((acc, trans) => acc + trans, 0);
+const displayBalance = function (account) {
+  const balance = account.transactions.reduce((acc, trans) => acc + trans, 0);
+  account.balance = balance; // помещаем в объект новое свойство баланс
   labelBalance.textContent = `${balance}$`;
 };
 
 // ФУНКЦИЯ ДЛЯ ОТОБРАЖЕНИЯ СУММЫ ВСЕХ ПОЛУЧЕНИЙ, ВЫВОДОВ СРЕДСТВ И ПРОЦЕНТ
-
 const displayTotal = function (account) {
   const depositTotal = account.transactions
     .filter(trans => trans > 0)
@@ -159,10 +165,24 @@ const displayTotal = function (account) {
   labelSumInterest.textContent = `${interestTotal.toFixed(2)}$`;
 };
 
-// ИМПЛЕМЕНТИРУЕМ ЛОГИН
+// ФУНКЦИЯ ОБНОВЛЕНИЯ ИНТЕРФЕЙСА
+const updateUi = function (account) {
+  // Display transactions
+  displayTransactions(account.transactions);
+
+  // Display balance
+  displayBalance(account);
+
+  // Display total
+  displayTotal(account);
+};
+
+///////////////////////////////////////////////////////////////////////////////////////
+// ---------------------Event hendlers (слушатели событий)---------------------------
 
 let currentAccount; // обьявляем переменную текущего аккаунта
 
+// ИМПЛЕМЕНТАЦИЯ ЛОГИНА
 // в формах обработчик события срабатывает при нажатии клавиши enter
 btnLogin.addEventListener('click', function (e) {
   e.preventDefault(); // метод предотвращает отправку формы, и страница не будет перезагружаться
@@ -178,19 +198,82 @@ btnLogin.addEventListener('click', function (e) {
     labelWelcome.textContent = `Рады что вы снова с нами, ${
       currentAccount.userName.split(' ')[0]
     }!`;
-
     // Clear inputs
     inputLoginUsername.value = '';
     inputLoginPin.value = '';
     inputLoginPin.blur(); // убираем фокус курсора из поля pin
 
-    // Display transactions
-    displayTransactions(currentAccount.transactions);
-
-    // Display balance
-    displayBalance(currentAccount.transactions);
-
-    // Display total
-    displayTotal(currentAccount);
+    updateUi(currentAccount); // обновляем интерфейс
   }
+});
+
+// ИМПЛЕМЕНТАЦИЯ ПЕРЕВОДА СРЕДСТВ
+btnTransfer.addEventListener('click', function (e) {
+  e.preventDefault(); // предотвращаем отправку формы
+  const transferAmount = Number(inputTransferAmount.value);
+  const recipientUser = inputTransferTo.value;
+  const recipientAccount = accounts.find(
+    account => account.nickname === recipientUser // находим счет пользователя-получателя
+  );
+  inputTransferTo.value = ''; // очищаем поле получателя
+  inputTransferAmount.value = ''; // очищаем поле суммы трансфера
+  // проверяем перевод
+  if (
+    transferAmount && // проверяем существует ли аккаунт получателя
+    transferAmount > 0 && // сумма должна быть больше 0
+    currentAccount.balance >= transferAmount && // баланс отправителя должен быть больше или равен сумме трансфера
+    currentAccount.nickname !== recipientAccount?.nickname // при этом условии нельзя отправить самому себе
+  ) {
+    currentAccount.transactions.push(-transferAmount);
+    recipientAccount.transactions.push(transferAmount);
+    updateUi(currentAccount);
+  }
+});
+
+// ИМПЛЕМЕНТАЦИЯ ЗАКРЫТИЯ СЧЕТА
+btnClose.addEventListener('click', function (e) {
+  e.preventDefault(); //  предотвращаем отправку формы
+  if (
+    currentAccount.nickname === inputCloseUsername.value && //проверяем верный ли логин
+    currentAccount.pin === Number(inputClosePin.value) // проверяем верный ли пин
+  ) {
+    // ищем индекс текущего аккаунта в массиве аккаунтов
+    const currentAccountIndex = accounts.findIndex(
+      account => account.nickname === currentAccount.nickname
+    );
+    accounts.splice(currentAccountIndex, 1); // удаляем аккаунт из массива
+    containerApp.style.opacity = 0; // скрываем UI
+    labelWelcome.textContent = 'Войдите в свой аккаунт'; // меняем надпись в навигации
+  }
+  inputClosePin.value = ''; // очищаем поля ввода
+  inputCloseUsername.value = '';
+  inputLoginPin.blur(); // убираем фокус курсора из поля pin
+});
+
+// ИМПЛЕМЕНТАЦИЯ ЗАПРОСА ЗАЙМА
+// условие займа:  хотя бы 1 из депозитов должен быть больше 10% от запрашиваемой суммы
+btnLoan.addEventListener('click', function (e) {
+  e.preventDefault();
+  const loanAmount = Number(inputLoanAmount.value); // получаем значение из инпута
+  if (
+    loanAmount > 0 && // запрашиваемая сумма больше 0
+    currentAccount.transactions.some(trans => trans >= (loanAmount * 10) / 100) // проверяем, есть ли в транзакциях пользователя хотя бы 1 депозит больше 10% от запрашиваемой суммы
+  ) {
+    currentAccount.transactions.push(loanAmount); // добавляем депозит пользователю
+    updateUi(currentAccount); // обновляем интерфейс
+  }
+  inputLoanAmount.value = ''; // очищаем инпут
+});
+
+// ИМПЛЕМЕНТАЦИЯ СОРТИРОВКИ
+
+// создаем переменную состояния, которая следит отсортирован ли список
+let transactionsSorted = false;
+
+// каждый раз при нажатии на кнопку массив будет менять состояние отсортирован - не отсортирован
+btnSort.addEventListener('click', function (e) {
+  e.preventDefault();
+  // передаем в функцию парамент тру, так как по нажатию на кнопку нужна сортировка
+  displayTransactions(currentAccount.transactions, !transactionsSorted); // так как изначально значение переменной состояния false а нам нужно передать в функцию при клике true то записываем !transactionsSorted - что означает true
+  transactionsSorted = !transactionsSorted; // меняем значение переменной на противоположное
 });

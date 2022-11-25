@@ -77,4 +77,31 @@ const { depositsTotal, withdrawalsTotal } = accounts // сразу помеща�
   );
 console.log(depositsTotal, withdrawalsTotal);
 
-////////////////////////////////////////////////////////////////////////////////////
+// Задание 4: создание функции, которая будет приводить любую строку к заголовочному тексту
+// работа с массивами в javascript - Работа с Массивами в Javascript
+
+const text1 = 'работа с массивами в javascript';
+const text2 = 'работа с массивами в javascript ПРОСТЫМ языком для новичков';
+const text3 = 'работа с массивами и строками в javascript';
+const text4 = 'для чего нужны массивы в javascript';
+
+const textToTitleCase = function (text) {
+  const exeptions = ['с', 'в', 'для', 'и', 'по', 'на', 'о']; // создаем массив с предлогами для исключения
+
+  const capitalizeString = word => word[0].toUpperCase() + word.slice(1);
+
+  const titleCase = text
+    .toLowerCase()
+    .split(' ')
+    .map(
+      word => (exeptions.includes(word) ? word : capitalizeString(word)) // если слово есть в массиве слов исключений то возвращаем слово, если нет то делаем 1ую букву заглавной и возвращаем слово
+    )
+    .join(' ');
+
+  return capitalizeString(titleCase);
+};
+
+console.log(textToTitleCase(text1));
+console.log(textToTitleCase(text2));
+console.log(textToTitleCase(text3));
+console.log(textToTitleCase(text4));

@@ -132,7 +132,7 @@ const displayTransactions = function (transactions, sort = false) {
       <div class="transactions__type transactions__type--${transType}">
         ${index + 1} ${transType}
       </div>
-      <div class="transactions__value">${trans} $</div>
+      <div class="transactions__value">${trans}</div>
     </div>`;
     // вставляем наш transactionRow после начала родительского элемента containerTransactions
     containerTransactions.insertAdjacentHTML('afterbegin', transactionRow); // указываем 2 параметра, 1 как мы хотим вставить элемент, 2-ой какой элемент вставлять
@@ -276,4 +276,20 @@ btnSort.addEventListener('click', function (e) {
   // передаем в функцию парамент тру, так как по нажатию на кнопку нужна сортировка
   displayTransactions(currentAccount.transactions, !transactionsSorted); // так как изначально значение переменной состояния false а нам нужно передать в функцию при клике true то записываем !transactionsSorted - что означает true
   transactionsSorted = !transactionsSorted; // меняем значение переменной на противоположное
+});
+
+// Array.from() example
+
+const logoImage = document.querySelector('.logo');
+logoImage.addEventListener('click', function () {
+  const transactionsUi = document.querySelectorAll('.transactions__value'); // выбираем все элементы на странице
+  console.log(transactionsUi);
+  // const transactionsUiArray = Array.from(transactionsUi);
+  // console.log(transactionsUiArray);
+  // console.log(transactionsUiArray.map(elem => Number(elem.textContent)));
+  const transactionsUiArray = Array.from(
+    transactionsUi, // передаем в функцию длинну масива, она будет равна колличеству элементов в transactionsUi
+    elem => Number(elem.textContent) // элементы создаваемого массива будут взяты из textContent
+  );
+  console.log(transactionsUiArray);
 });
